@@ -1,0 +1,337 @@
+---
+title: "Exercise 11.2"
+author: "Dipika Sharma"
+date: June 5, 2021
+output:
+  html_document: default
+  word_document: default
+  pdf_document: default
+bibliography: bibliography.bib
+always_allow_html: true
+---
+
+## Add Citations
+
+* R for Everyone [@lander2014r]
+* Discovering Statistics Using R [@field2012discovering]
+
+## In this problem, you will use the nearest neighbors algorithm to fit a model on two simplified datasets. The first dataset (found in binary-classifier-data.csv) contains three variables; label, x, and y. The label variable is either 0 or 1 and is the output we want to predict using the x and y variables (You worked with this dataset last week!). The second dataset (found in trinary-classifier-data.csv) is similar to the first dataset except that the label variable can be 0, 1, or 2.
+
+```{r include=TRUE}
+## Set the working directory to the root of your DSC 520 directory
+setwd("/Users/dipikasharma/R_Projects/DSC520")
+
+## Load the data to df
+Binary_df <- read.csv("data/binary-classifier-data.csv")
+head(Binary_df)
+trinary <- read.csv("data/trinary-classifier-data.csv")
+head(trinary)
+```
+
+## Note that in real-world datasets, your labels are usually not numbers, but text-based descriptions of the categories (e.g. spam or ham). In practice, you will encode categorical variables into numeric values.
+
+## i. Plot the data from each dataset using a scatter plot.
+
+Using the scatterplot we can see the correlation between labels and variable x and y.
+
+```{r include=FALSE}
+library(ggvis)
+```
+
+
+```{r include=TRUE}
+
+Binary_df %>% ggvis(~x, ~y, fill = ~label) %>% layer_points()
+
+```
+
+```{r include=TRUE}
+
+trinary %>% ggvis(~x, ~y, fill = ~label) %>% layer_points()
+```
+
+
+## The k nearest neighbors algorithm categorizes an input value by looking at the labels for the k nearest points and assigning a category based on the most common label. In this problem, you will determine which points are nearest by calculating the Euclidean distance between two points. As a refresher, the Euclidean distance between two points:
+
+```{r include=TRUE}
+set.seed(123)
+dat.d <- sample(1:nrow(Binary_df),size=nrow(Binary_df)*0.7,replace = FALSE) #random selection of 70% data.
+dat.d_trinary <- sample(1:nrow(trinary),size=nrow(trinary)*0.7,replace = FALSE)
+
+train.Binary <- Binary_df[dat.d,] # 70% training data
+test.Binary <- Binary_df[-dat.d,] # remaining 30% test data
+
+train.trinary <- trinary[dat.d_trinary,] # 70% training data
+test.trinary <- trinary[-dat.d_trinary,] # remaining 30% test data
+
+#Creating separate dataframe for 'Creditability' feature which is our target.
+train.binary_labels <- Binary_df[dat.d,1]
+test.binary_labels <-Binary_df[-dat.d,1]
+
+train.trinary_labels <- trinary[dat.d_trinary,1]
+test.trinary_labels <-trinary[-dat.d_trinary,1]
+
+
+#Find the number of observation
+NROW(train.binary_labels) 
+sqrt(NROW(train.binary_labels) )
+
+```
+
+So, we have 1048 observations in our training data set. The square root of 1048 is around 32.37, 
+therefore ww will create two models. One with ‘K’ value as 32 and the other model with a ‘K’ value as 33
+
+```{r include=TRUE}
+NROW(train.trinary_labels) 
+sqrt(NROW(train.trinary_labels) )
+```
+
+For Trinary data set, So, we have 1097 observations in our training data set. The square root of 1097 is around 33.12, therefore we will create two models. One with ‘K’ value as 33 and the other model with a ‘K’ value as 34
+
+```{r include=TRUE}
+library(class)
+knn.32 <- knn(train=train.Binary, test=test.Binary, cl=train.binary_labels, k=32)
+knn.33 <- knn(train=train.Binary, test=test.Binary, cl=train.binary_labels, k=33)
+
+knn.33.trinary <- knn(train=train.trinary, test=test.trinary, cl=train.trinary_labels, k=33)
+knn.34.trinary <- knn(train=train.trinary, test=test.trinary, cl=train.trinary_labels, k=34)
+```
+
+## Fitting a model is when you use the input data to create a predictive model. There are various metrics you can use to determine how well your model fits the data. For this problem, you will focus on a single metric, accuracy. Accuracy is simply the percentage of how often the model predicts the correct result. If the model always predicts the correct result, it is 100% accurate. If the model always predicts the incorrect result, it is 0% accurate.
+
+## Calculate the proportion of correct classification for k = 32, 33 for binary data set
+
+```{r include=TRUE}
+ACC.32 <- 100 * sum(test.binary_labels == knn.32)/NROW(test.binary_labels)
+ACC.33 <- 100 * sum(test.binary_labels == knn.33)/NROW(test.binary_labels)
+ACC.32
+ACC.33
+
+```
+
+As shown above, the accuracy for K = 32 is 97.55 and for K = 33 it is 97.55 
+
+## Calculate the proportion of correct classification for k = 33, 34 for Trinary dataset
+
+```{r include=TRUE}
+ACC.33.trinary <- 100 * sum(test.trinary_labels == knn.33.trinary)/NROW(test.trinary_labels)
+ACC.34.trinary <- 100 * sum(test.trinary_labels == knn.34.trinary)/NROW(test.trinary_labels)
+ACC.33.trinary
+ACC.34.trinary
+```
+
+As shown above, the accuracy for K = 33 is 84.71 and for K = 34 it is 84.92.
+
+## We can also check the predicted outcome against the actual value in tabular form:
+  
+## Check prediction against actual value in tabular form for k=26 for Binary dataset
+
+```{r include=TRUE}
+table(knn.32 ,test.binary_labels)
+knn.32
+```
+
+## Check prediction against actual value in tabular form for k=27 for Binary dataset
+
+```{r include=TRUE}
+table(knn.33 ,test.binary_labels)  
+knn.33
+```
+
+## Check prediction against actual value in tabular form for k=26 for Trinary dataset
+
+```{r include=TRUE}
+table(knn.33.trinary ,test.trinary_labels)
+knn.33.trinary
+```
+
+## Check prediction against actual value in tabular form for k=27 for Trinary dataset
+
+```{r include=TRUE}
+table(knn.34.trinary ,test.trinary_labels)  
+knn.34.trinary
+```
+
+We can also use the confusion matrix to calculate the accuracy. 
+To do this we must first install the infamous Caret package:
+
+```{r include=TRUE}
+library(caret)
+
+confusionMatrix(table(knn.32 ,test.binary_labels))
+```
+
+For Binary dataset, we can see that our model predicts the outcome with an accuracy of 97.5% which is very good with small data set
+
+```{r include=TRUE}
+confusionMatrix(table(knn.33.trinary ,test.trinary_labels))
+```
+
+For Trinary dataset, we can see that our model predicts the outcome with an accuracy of 84.71% which is very good with small data set   
+
+## Fit a k nearest neighbors’ model for each dataset for k=3, k=5, k=10, k=15, k=20, and k=25. Compute the accuracy of the resulting models for each value of k. Plot the results in a graph where the x-axis is the different values of k and the y-axis is the accuracy of the model.
+
+```{r include=TRUE}
+library("kknn")
+library(class)
+
+i=3                         # declaration to initiate for loop
+k.optm=1   # declaration to initiate for loop
+val <- c(3,5,10,15,20,25)
+for (i in val){ 
+  knn.mod <-  knn(train=train.Binary, test=test.Binary, cl=train.binary_labels, k=i)
+  k.optm[i] <- 100 * sum(test.binary_labels == knn.mod)/NROW(test.binary_labels)
+  k=i  
+  cat(k,'=',k.optm[i],'\n')       # to print % accuracy 
+}
+```
+
+From the output you can see that for K = 25 in Binary dataset, we achieve the maximum accuracy of 98.44%. 
+
+```{r include=TRUE}
+i=3                         # declaration to initiate for loop
+k.optm.trinary=1   # declaration to initiate for loop
+val <- c(3,5,10,15,20,25)
+for (i in val){ 
+  knn.mod.trinary <-  knn(train=train.trinary, test=test.trinary, cl=train.trinary_labels, k=i)
+  k.optm.trinary[i] <- 100 * sum(test.trinary_labels == knn.mod)/NROW(test.trinary_labels)
+  k=i  
+  cat(k,'=',k.optm[i],'\n')       # to print % accuracy 
+}
+```
+
+From the output you can see that for K = 3 in Trinary dataset, we achieve the maximum accuracy of 90.23%. 
+
+We can also represent this graphically, like so:
+
+## Accuracy plot Binary Dataset
+
+```{r include=TRUE}
+plot(k.optm, type="b", xlab="K- Value",ylab="Accuracy level")
+```
+
+## Accuracy plot Trinary Dataset
+
+```{r include=TRUE}
+plot(k.optm.trinary, type="b", xlab="K- Value",ylab="Accuracy level")
+```
+
+## Looking back at the plots of the data, do you think a linear classifier would work well on these datasets?
+
+Linear Classifier is used for making classification decision based on the value characteristic, to identify which group or class value belongs to. We mainly use linear classifier for problems with many variables or features. For Binary and Trinary dataset, linear classifier will not work well as they they few variables and looking at the plots we do not see huge variance in accuracy with different k-value.
+
+## How does the accuracy of your logistic regression classifier from last week compare?  Why is the accuracy different between these two methods?
+
+The accuracy of logistic regression classifier was 57.5 % only where as with KNN the accuracy of an model 98.44%. Both model are good, it depends on type of problem we are working on. Binary data set have categorical variable which work best with non-parametric model and KNN is non-parametric model where as Logistic regression work best on parametric model.
+
+## Clustering
+
+## In this problem, you will use the k-means clustering algorithm to look for patterns in an unlabeled dataset. The dataset for this problem is found at data/clustering-data.csv.
+
+```{r include=TRUE}
+## Set the working directory to the root of your DSC 520 directory
+setwd("/Users/dipikasharma/R_Projects/DSC520")
+
+## Load the `data/r4ds/heights.csv` to
+clustering_df <- read.csv("data/clustering-data.csv")
+```
+
+## Plot the dataset using a scatter plot.
+
+```{r include=TRUE}
+library(ggplot2)
+ggplot(clustering_df, aes(x = x, y = y)) +
+  geom_point()
+```
+
+```{r include=TRUE}
+library(dplyr)
+glimpse(clustering_df)
+
+summary(clustering_df)
+# 'aggr' plots the amount of missing/imputed values in each column
+library(VIM)
+aggr(clustering_df)        
+```
+
+As you can see, the dataset has no missing values.
+
+```{r include=TRUE}
+k2 <- kmeans(clustering_df, centers = 3, nstart = 25)
+str(k2)
+print(k2)
+```
+
+If we print the results we’ll see that our groupings resulted in 3 cluster sizes of 1347, 1402 and 1273.
+
+We can also view our results by using fviz_cluster
+
+```{r include=TRUE}
+library(factoextra)
+fviz_cluster(k2, data = clustering_df)
+```
+
+Alternatively, you can use standard pairwise scatter plots to illustrate the clusters compared to the original variables.
+
+```{r include=TRUE}
+plot(clustering_df,col=k2$cluster, main="k-means with 3 clusters", xlab="", ylab="")
+```
+
+## Fit the dataset using the k-means algorithm from k=2 to k=12. Create a scatter plot of the resultant clusters for each value of k.
+
+```{r include=TRUE}
+# Set up 2 x 3 plotting grid
+par(mfrow = c(2, 3))
+
+# Set seed
+set.seed(1)
+
+for(i in 2:12) {
+  # Run kmeans() on x with three clusters and one start
+  km.out <- kmeans(clustering_df, centers=3, nstart=1)
+  
+  # Plot clusters
+  plot(clustering_df, col = km.out$cluster, 
+       main = km.out$tot.withinss, 
+       xlab = "", ylab = "")
+}
+```
+
+## As k-means is an unsupervised algorithm, you cannot compute the accuracy as there are no correct values to compare the output to. Instead, you will use the average distance from the center of each cluster as a measure of how well the model fits the data. To calculate this metric, simply compute the distance of each data point to the center of the cluster it is assigned to and take the average value of all of those distances.
+
+```{r include=TRUE}
+kmeans.wss.k <- function(clustering_df, k){
+  km = kmeans(clustering_df, k)
+  return (km$tot.withinss)
+}        
+        
+kmeans.wss.k(clustering_df,5)
+kmeans.wss.k(clustering_df,10)
+```
+
+It can be seen that as the value of K increases, distortion decreases.
+
+```{r include=TRUE}
+kmeans.dis <- function(clustering_df, maxk){
+   dis=(nrow(clustering_df)-1)*sum(apply(clustering_df,2,var))
+  dis[2:maxk]=sapply (2:maxk, kmeans.wss.k, clustering_df=clustering_df)
+   return(dis)}
+ maxk = 12
+ dis = kmeans.dis(clustering_df, maxk);
+ dis
+```
+
+## Calculate this average distance from the center of each cluster for each value of k and plot it as a line chart where k is the x-axis and the average distance is the y-axis.
+
+```{r include=TRUE}
+ plot(1:maxk, dis, type='b', xlab="Number of Clusters",
+        ylab="Distortion",
+        col="blue")
+```
+
+## One way of determining the “right” number of clusters is to look at the graph of k versus average distance and finding the “elbow point”. Looking at the graph you generated in the previous example, what is the elbow point for this dataset?
+
+This is the plot between ‘k’, the number of clusters and the ‘totwithinss’ (or distortion) for each value of k. You can see when the number of cluster is less, there is a gradual decrease in distortion but as we keep on increasing the value of k, the rate of reduction of distortion values becomes constant.
+This value of k beyond which the distortion rate becomes constant is the optimal value. Here  k=7.
+
+## References
